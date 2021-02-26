@@ -18,17 +18,17 @@ def sigmoid(x):
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Hyperparams')
-    parser.add_argument('--action', type=str, default="Predict", help='Action to execute [Train/Evaluate/Predict]')
-    parser.add_argument('--modelnumber', type=str, default=2, help='Chose model tu use')
-    parser.add_argument('--n_epoch', '-e', type=int, default=20, help='number of epochs')
+    parser.add_argument('--action', type=str, default="Train", help='Action to execute [Train/Evaluate/Predict]')
+    parser.add_argument('--modelnumber', type=str, default=3, help='Chose model tu use')
+    parser.add_argument('--n_epoch', '-e', type=int, default=35, help='number of epochs')
     parser.add_argument('--vocab', '-v', type=str, default='vocab/vocab.pkl', help='vocabulary (.pkl)')
-    parser.add_argument('--data', type=str, default='data/dataset_single.csv', help='train corpus (.csv)')
+    parser.add_argument('--data', type=str, default='data/dataset_multi.csv', help='train corpus (.csv)')
     parser.add_argument('--out_dir_models', '-o', type=str, default='models', help='output directory')
     parser.add_argument('--out_dir_results', '-od', type=str, default='results', help='output directory')
     parser.add_argument('--batch_size', '-b', type=int, default=10, help='batch size')
-    parser.add_argument('--lr', type=float, default=1e-4, help='Adam learning rate')
-    parser.add_argument('--modelpath', type=str, default="models/model2.save", help='Model to load')
-    parser.add_argument('--out_model_name', type=str, default='model2.save', help='output directory')
+    parser.add_argument('--lr', type=float, default=1e-3, help='Adam learning rate')
+    parser.add_argument('--modelpath', type=str, default="models/model3.save", help='Model to load')
+    parser.add_argument('--out_model_name', type=str, default='model3.save', help='output directory')
 
     return parser.parse_args()
 
@@ -37,6 +37,7 @@ def predict(args):
     print("Insert Smiles to predict")
     smiles_input = str(input())
     print("Predicting ", smiles_input)
+
     if args.modelnumber == 1:
         model = LinearClassification1(2048, 1)
         features = fe.fingerprint_features(smiles_input)
@@ -71,7 +72,53 @@ def predict(args):
 
 
 def evaluate(args):
-    pass
+    print("Evaluating model ", args.modelnumber)
+    sigmoid_v = np.vectorize(sigmoid)
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    if args.modelnumber < 1 or args.modelnumber > 3: return
+    if args.modelnumber == 1:
+        data = importfiles(args.data)
+        X, Y = [], []
+        for index, row in data.iterrows():
+            P1, mol_id, smiles = row
+            features = fe.fingerprint_features(smiles)
+            numpy_features = fe.convert_to_numpy(features)
+            X.append(numpy_features)
+            Y.append(P1)
+        evaluate_data = molDataset(torch.FloatTensor(X),
+                                   torch.FloatTensor(Y))
+        model = LinearClassification1(2048, 1)
+
+    elif args.modelnumber == 2:
+        vocab = WordVocab.load_vocab(args.vocab)
+        evaluate_data = SmilesDatasetP1(args.data, vocab)
+        model = LinearClassification2(220, 1)
+    elif args.modelnumber == 3:
+        vocab = WordVocab.load_vocab(args.vocab)
+        evaluate_data = SmilesDatasetP1_P9(args.data, vocab)
+        model = LinearClassification3(220, 9)
+
+
+    # Load model from file
+    eval_loader = DataLoader(evaluate_data, batch_size=args.batch_size, shuffle=False)
+    model.load_state_dict(torch.load(args.modelpath))
+    model.eval()
+    outputs = []
+    targets = []
+    if (torch.cuda.is_available()):
+        model.cuda()
+    for X_batch, y_batch in eval_loader:
+        X_batch = X_batch.cuda()
+        y_batch = y_batch.cuda()
+        # Training mode and zero gradients
+        y_pred = model(X_batch)
+        outputs.append(y_pred.cpu().detach().numpy())
+        targets.append(y_batch.cpu().detach().numpy())
+        # Save targets in an output file
+    outputs = np.concatenate(outputs)
+    targets = np.concatenate(targets)
+
+    print(len(sigmoid_v(outputs).round()))
 
 def train(args):
     print("Training model ",args.modelnumber)
@@ -89,7 +136,7 @@ def train(args):
             numpy_features = fe.convert_to_numpy(features)
             X.append(numpy_features)
             Y.append(P1)
-            ## Train/Val Division
+        ## Train/Val Division
 
         X_train, X_val, y_train, y_val = train_test_split(X, Y, test_size=0.20, random_state=15, shuffle=True,
                                                           stratify=Y)
@@ -98,14 +145,15 @@ def train(args):
                                 torch.FloatTensor(y_train))
         val_data = molDataset(torch.FloatTensor(X_val),
                               torch.FloatTensor(y_val))
-        end_lr = 0.0005
+        end_lr = 0.005
         PATH = "model.save"
 
         train_loader = DataLoader(dataset=train_data, batch_size=args.batch_size, shuffle=True)
         val_loader = DataLoader(dataset=val_data, batch_size=args.batch_size, shuffle=True)
 
         print("Training in ", device)
-        model = LinearClassification1(2048, 1)
+        #model = LinearClassification1(2048, 1)
+        model = LinearClassificationX(input_dim=2048,hidden_dim=256,tagset_size=1,dropout=0.5)
         criterion = nn.BCEWithLogitsLoss()
         optimizer = optim.Adam(model.parameters(), lr=args.lr)
         lr_lambda = lambda x: math.exp(x * math.log(end_lr / args.lr) / (EPOCHS * len(train_data)))
@@ -158,7 +206,8 @@ def train(args):
 
 
     elif args.modelnumber == 2:
-        model = LinearClassification2(220, 1)
+        #model = LinearClassification2(220, 1)
+        model = LinearClassificationX(input_dim=220, hidden_dim=256, tagset_size=1, dropout=0.5)
         criterion = nn.BCEWithLogitsLoss()
         optimizer = optim.Adam(model.parameters(), lr=args.lr)
         vocab = WordVocab.load_vocab(args.vocab)
@@ -212,7 +261,8 @@ def train(args):
 
     elif args.modelnumber == 3:
         #Loading Model , loss and optimizer
-        model = LinearClassification3(220, 9)
+        #model = LinearClassification3(220, 9)
+        model = LinearClassificationX(input_dim=220, hidden_dim=256, tagset_size=9, dropout=0.5)
         criterion = nn.BCEWithLogitsLoss()
         optimizer = optim.SGD(model.parameters(), lr=args.lr)
 
@@ -279,11 +329,6 @@ def main():
         evaluate(args)
     elif args.action == "Predict":
         predict(args)
-
-
-
-
-
 
 
 if __name__ == "__main__":
