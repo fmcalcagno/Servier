@@ -1,0 +1,10 @@
+/data/dataset_multi.csv
+/data/dataset_single.csv
+/models/model1.save
+/models/model2.save
+/models/model2_GRU.save
+/models/model3.save
+/models/model3_GRU.save
+/results/output1.csv
+/results/output2.csv
+/results/output3.csv
