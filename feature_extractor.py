@@ -12,7 +12,3 @@ def fingerprint_features(smile_string, radius=2, size=2048):
                                                           useBondTypes=True,
                                                           useFeatures=False
                                                          )
-def convert_to_numpy(fp):
-    arr = numpy.zeros((1,))
-    DataStructs.ConvertToNumpyArray(fp, arr)
-    return arr

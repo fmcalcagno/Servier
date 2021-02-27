@@ -4,6 +4,8 @@ import torch.nn as nn
 from rdkit import Chem
 from rdkit import rdBase
 import pandas as pd
+import numpy as np
+
 rdBase.DisableLog('rdApp.*')
 
 # Split SMILES into words
@@ -212,15 +214,34 @@ def cyclical_lr(stepsize, min_lr=3e-5, max_lr=3e-3):
 
     return lr_lambda
 
-def binary_acc(y_pred, y_test):
-    y_pred_tag = torch.round(torch.sigmoid(y_pred))
-
-    correct_results_sum = (y_pred_tag == y_test).sum().float()
+def binary_acc2(y_pred, y_test):
+    #y_pred_tag = torch.round(torch.sigmoid(y_pred))
+    y_pred_tag= y_pred.argmax(1)
+    y_test_tag = y_test.argmax(1)
+    #print("Predictions", y_pred_tag)
+    #print("Targets    ", y_test_tag)
+    correct_results_sum = (y_pred_tag == y_test_tag).sum().float()
     acc = correct_results_sum / y_test.shape[0]
     acc = torch.round(acc * 100)
+    #print(acc)
+
+    return acc
+
+def binary_acc(y_pred, y_test):
+    y_pred_tag = torch.round(torch.sigmoid(y_pred))
+    #y_pred_tag= y_pred.argmax(1)
+    y_test_tag = y_test
+    #print("Predictions", y_pred_tag)
+    #print("Targets    ", y_test_tag)
+    correct_results_sum = (y_pred_tag == y_test_tag).sum().float()
+    acc = correct_results_sum / y_test.shape[0]
+    acc = torch.round(acc * 100)
+    #print(acc)
 
     return acc
 
 def get_lr(optimizer):
     for param_group in optimizer.param_groups:
         return param_group['lr']
+def sigmoid(x):
+  return 1 / (1 + math.exp(-x))
