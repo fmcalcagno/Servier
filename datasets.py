@@ -81,3 +81,20 @@ class SmilesDatasetP1_P9(Dataset):
         else:
             x = torch.LongTensor(x)
         return x, torch.FloatTensor(output_one_hot)
+
+
+
+class SmilesDataset_singleline():
+    def __init__(self, input1, seq_len=2048):
+        self.input1 = input1
+
+        self.seq_len = seq_len
+
+
+    def get_item(self):
+        mol = read_smiles(self.input1)
+        x = nx.to_numpy_array(mol).flatten('F')
+        x = np.pad(x, (0, self.seq_len - len(x)), 'constant', constant_values=(0))
+        x = torch.LongTensor(x)
+
+        return x

@@ -10,16 +10,16 @@ from sklearn.preprocessing import OneHotEncoder
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Hyperparams')
-    parser.add_argument('--action', type=str, default="Train", help='Action to execute [Train/Evaluate/Predict]')
-    parser.add_argument('--modelnumber', type=str, default=2, help='Chose model tu use')
-    parser.add_argument('--n_epoch', '-e', type=int, default=100, help='number of epochs')
+    parser.add_argument('--action', type=str, default="Predict", help='Action to execute [Train/Evaluate/Predict]')
+    parser.add_argument('--modelnumber', type=str, default=3, help='Chose model tu use')
+    parser.add_argument('--n_epoch', '-e', type=int, default=50, help='number of epochs')
     parser.add_argument('--data', type=str, default='data/dataset_multi.csv', help='train corpus (.csv)')
     parser.add_argument('--out_dir_models', '-o', type=str, default='models', help='output directory')
-    parser.add_argument('--out_file_results', '-of', type=str, default='results/output2.csv', help='output file for Evaluation')
+    parser.add_argument('--out_file_results', '-of', type=str, default='results/output1.csv', help='output file for Evaluation')
     parser.add_argument('--batch_size', '-b', type=int, default=10, help='batch size')
     parser.add_argument('--lr', type=float, default=0.005, help='Learning rate')
-    parser.add_argument('--modelpath', type=str, default="models/model2.save", help='Model to load')
-    parser.add_argument('--out_model_name', type=str, default='model2.save', help='output directory')
+    parser.add_argument('--modelpath', type=str, default="models/model3.save", help='Model to load')
+    parser.add_argument('--out_model_name', type=str, default='model3.save', help='output directory')
 
     return parser.parse_args()
 
@@ -35,28 +35,37 @@ def predict(args):
         nn_input = torch.FloatTensor(np.asarray(features))
     elif args.modelnumber == 2:
         model = LSTMModel(input_size=2048, embed_size=50, hidden_size=150, output_size=2)
+        sl = SmilesDataset_singleline(smiles_input)
+        nn_input = sl.get_item()
+        hotencoder = OneHotEncoder()
+
+        he = hotencoder.fit_transform([[0], [1]]).toarray()
 
     elif args.modelnumber == 3:
         model = LSTMModel(input_size=2048, embed_size=50, hidden_size=150, output_size=18)
-
-        #sl = SmilesDataset_singleline(smiles_input, vocab)
-        #nn_input = sl.get_item()
+        sl = SmilesDataset_singleline(smiles_input)
+        nn_input = sl.get_item()
+        hotencoder = OneHotEncoder()
+        he = hotencoder.fit_transform([[0,0,0,0,0,0,0,0,0],[1,1,1,1,1,1,1,1,1]]).toarray()
 
     if (torch.cuda.is_available()):
         model.cuda()
 
     model.load_state_dict(torch.load(args.modelpath))
 
-    model.eval()
-
     if (torch.cuda.is_available()):
         model.cuda()
 
     with torch.no_grad():
+        model.eval()
         X_batch = nn_input.cuda()
-
-        y_val = model(X_batch)
-        print(sigmoid_v(y_val.cpu().detach().numpy()).round())
+        if args.modelnumber >= 2:
+            y_val, _ = model(X_batch.unsqueeze(0))
+            y_val2 = y_val.cpu().detach().numpy()
+            y_pred_classes = hotencoder.inverse_transform(y_val2)
+        else:
+            y_val = model(X_batch.unsqueeze(0))
+        print(y_pred_classes)
 
 
 def evaluate(args):
@@ -74,7 +83,7 @@ def evaluate(args):
             X.append(numpy_features)
             Y.append(P1)
 
-        full_dataset = molDataset(torch.FloatTensor(X ),
+        full_dataset = molDataset(torch.FloatTensor(X),
                                    torch.FloatTensor(Y))
         model = LinearClassificationX(input_dim=2048,hidden_dim=256,tagset_size=1,dropout=0.7)
 
@@ -111,8 +120,7 @@ def evaluate(args):
             y_pred,_ = model(X_batch)
         outputs.append(y_pred.cpu().detach().numpy())
         targets.append(y_batch.cpu().detach().numpy())
-        #print("Predictions:", torch.round(torch.sigmoid(y_pred)))
-        #print("Target:", y_batch.unsqueeze(1))
+
 
     # Save targets in an output file
     outputs = np.concatenate(outputs)
