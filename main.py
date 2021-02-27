@@ -1,15 +1,9 @@
 import argparse
-import torch
 from models import *
 import feature_extractor as fe
-from build_vocab import WordVocab
-import numpy as np
-import math
-from utils import *
 from datasets import *
-from sklearn.model_selection import train_test_split
 import torch.optim as optim
-from sklearn.metrics import f1_score,accuracy_score,confusion_matrix,classification_report,multilabel_confusion_matrix
+from sklearn.metrics import confusion_matrix,classification_report,multilabel_confusion_matrix
 from sklearn.preprocessing import OneHotEncoder
 
 
@@ -41,9 +35,6 @@ def predict(args):
         nn_input = torch.FloatTensor(np.asarray(features))
     elif args.modelnumber == 2:
         model = LSTMModel(input_size=2048, embed_size=50, hidden_size=150, output_size=2)
-        vocab = WordVocab.load_vocab('vocab/vocab.pkl')
-        #sl = SmilesDataset_singleline(smiles_input, vocab)
-        #nn_input = sl.get_item()
 
     elif args.modelnumber == 3:
         model = LSTMModel(input_size=2048, embed_size=50, hidden_size=150, output_size=18)
@@ -89,13 +80,9 @@ def evaluate(args):
 
     elif args.modelnumber == 2:
 
-        #vocab = WordVocab.load_vocab(args.vocab)
         hotencoder= OneHotEncoder()
         full_dataset = SmilesDatasetP1(hotencoder,args.data,input_type="Long")
-        #model = LinearClassificationX(input_dim=220, hidden_dim=512, tagset_size=2, dropout=0.8)
         model = LSTMModel(input_size=2048, embed_size=50, hidden_size=150, output_size=2)
-        #model = LSTMTagger(vocab_size=220,hidden_dim=2048,tagset_size=1,embedding_dim=15)
-        #model = LSTMModel(input_size=220, embed_size=1, dropout=0.5, hidden_size=6, n_layers=3, output_size=1)
 
     elif args.modelnumber == 3:
 
@@ -116,7 +103,8 @@ def evaluate(args):
     for X_batch, y_batch in eval_loader:
         X_batch = X_batch.cuda()
         y_batch = y_batch.cuda()
-        # Training mode and zero gradients
+        model.eval()
+        # Test mode and zero gradients
         if args.modelnumber ==1:
             y_pred = model(X_batch)
         elif args.modelnumber >= 2:
@@ -126,17 +114,12 @@ def evaluate(args):
         #print("Predictions:", torch.round(torch.sigmoid(y_pred)))
         #print("Target:", y_batch.unsqueeze(1))
 
-        # Save targets in an output file
+    # Save targets in an output file
     outputs = np.concatenate(outputs)
     targets = np.concatenate(targets)
-    #print(len(sigmoid_v(outputs).round()))
+
     model_output = pd.DataFrame()
-    feat=[]
-    tar=[]
-    # for i in range(len(evaluate_data)):  # or i, image in enumerate(dataset)
-    #     features,target = evaluate_data[i]
-    #     feat.append(features)
-    #     tar.append(target)
+
 
     if args.modelnumber == 1 :
         model_output["target"] = targets
@@ -191,16 +174,14 @@ def train(args):
             features = fe.fingerprint_features(smiles)
             X.append(np.asarray(features))
             Y.append(P1)
-        ## Train/Val Division
+
 
         full_dataset = molDataset(torch.FloatTensor(X),
                                   torch.FloatTensor(Y))
 
 
         print("Training in ", device)
-        #model = LinearClassification1(2048, 1)
         model = LinearClassificationX(input_dim=2048,hidden_dim=256,tagset_size=1,dropout=0.7)
-        #model = LSTMModel(input_size=2048, embed_size=50, hidden_size=50, output_size=1)
         criterion = nn.BCEWithLogitsLoss(pos_weight = torch.FloatTensor([0.6]).cuda())
         optimizer = optim.Adam(model.parameters(), lr=args.lr)
 
@@ -218,14 +199,9 @@ def train(args):
                 # Training mode and zero gradients
                 optimizer.zero_grad()
                 y_pred = model(X_batch)
-                # print(y_pred)
-                # print("Predictions:", torch.round(torch.sigmoid(y_pred)))
-                # print("Target:", y_batch.unsqueeze(1))
                 loss = criterion(y_pred, y_batch.unsqueeze(1))
                 acc = binary_acc(y_pred, y_batch.unsqueeze(1))
 
-                # print("Accuracy:",acc)
-                # Backward pass
                 loss.backward()
                 optimizer.step()
 
@@ -244,7 +220,6 @@ def train(args):
         return
     elif args.modelnumber == 2:
 
-        #model = LinearClassificationX(input_dim=2048, hidden_dim=1024, tagset_size=2, dropout=0.5)
 
         model = LSTMModel(input_size=2048, embed_size=50, hidden_size=150, output_size=2)
         criterion = nn.BCEWithLogitsLoss(pos_weight = torch.FloatTensor([0.4, 0.6]).cuda())
@@ -260,7 +235,6 @@ def train(args):
 
         criterion = nn.BCEWithLogitsLoss()
         optimizer = optim.Adam(model.parameters(), lr=args.lr)
-        #Vocabulary generated with build_vocab.py
         hotencoder = OneHotEncoder()
         full_dataset = SmilesDatasetP1_P9(hotencoder,args.data,input_type="Long")
 
@@ -281,18 +255,9 @@ def train(args):
             model.train()
             X_batch = X.cuda()
             y_batch = Y.cuda()
-            #sm1, sm2 = torch.t(X_batch[0].cuda()), torch.t(X_batch[1].cuda())  # (T,B)
-            # Training mode and zero gradients
-
             optimizer.zero_grad()
             y_pred,hidden =model(X_batch,hidden)
 
-            #print("Predictions:", y_pred.argmax(1))
-            #print("Target:", y_batch.argmax(1))
-            #if any(torch.round(y_pred) == 0):
-            #    print("0 predicted")
-
-            #print("Target:", y_batch.unsqueeze(1))
             if args.modelnumber == 3:
                 loss = criterion(y_pred, y_batch)
 
@@ -300,7 +265,6 @@ def train(args):
                 loss = criterion(y_pred, y_batch)
                 acc = binary_acc2(y_pred, y_batch)
 
-            # print("Accuracy:",acc)
             # Backward pass
             loss.backward()
             optimizer.step()

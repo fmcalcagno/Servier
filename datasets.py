@@ -11,7 +11,6 @@ MAX_LEN = 220
 
 
 class molDataset(Dataset):
-
     def __init__(self, X_data, y_data):
         self.X_data = X_data
         self.y_data = y_data
@@ -23,7 +22,6 @@ class molDataset(Dataset):
         return len(self.X_data)
 
 
-
 class SmilesDatasetP1(Dataset):
 
     def __init__(self, hotencoder,file, seq_len=2048, input_type="Float"):
@@ -31,25 +29,18 @@ class SmilesDatasetP1(Dataset):
         self.targets = pd.read_csv(file)['P1']
         self.one_hot_targets = hotencoder.fit_transform(self.targets.values.reshape(-1, 1)).toarray()
         self.seq_len = seq_len
-
         self.input_type=input_type
+
     def __len__(self):
         return len(self.smiles)
 
     def __getitem__(self, item):
         sm = self.smiles[item]
-
-        mol = read_smiles(sm)
-
+        mol = read_smiles(sm) # Using features from readsmiles.py
         x = nx.to_numpy_array(mol).flatten('F')
-
         x = np.pad(x, (0, self.seq_len-len(x)), 'constant', constant_values=(0))
         output = self.targets[item].astype(float)
         output_one_hot = self.one_hot_targets [item].astype(float)
-
-        #sm = self.transform(sm)  # List
-        #content = [self.vocab.stoi.get(token, self.vocab.unk_index) for token in sm]
-        #x = [self.vocab.sos_index] + content + [self.vocab.eos_index]
 
         if self.input_type == "Float":
             x = torch.FloatTensor(x)
@@ -60,7 +51,6 @@ class SmilesDatasetP1(Dataset):
 
 
 class SmilesDatasetP1_P9(Dataset):
-
     def __init__(self, hotencoder,file,  seq_len=2048, input_type="Float"):
         self.smiles = pd.read_csv(file)['smiles']
         self.output1 = pd.read_csv(file)['P1']
@@ -73,7 +63,6 @@ class SmilesDatasetP1_P9(Dataset):
         self.output8 = pd.read_csv(file)['P8']
         self.output9 = pd.read_csv(file)['P9']
         self.outputs = pd.concat([self.output1,self.output2,self.output3,self.output4,self.output5,self.output6,self.output7,self.output8,self.output9],axis=1)
-
         self.one_hot_targets = hotencoder.fit_transform(self.outputs.values).toarray()
         self.input_type= input_type
         self.seq_len = seq_len
@@ -83,35 +72,12 @@ class SmilesDatasetP1_P9(Dataset):
         return len(self.smiles)
 
     def __getitem__(self, item):
-
         mol = read_smiles(self.smiles[item])
-
         x = nx.to_numpy_array(mol).flatten('F')
-
         x = np.pad(x, (0, self.seq_len - len(x)), 'constant', constant_values=(0))
-        #output = self.targets[item].astype(float)
         output_one_hot = self.one_hot_targets[item].astype(float)
-
         if self.input_type == "Float":
             x = torch.FloatTensor(x)
         else:
             x = torch.LongTensor(x)
-
         return x, torch.FloatTensor(output_one_hot)
-
-#
-# class SmilesDataset_singleline():
-#     def __init__(self, input1, vocab, seq_len=220, transform=Randomizer()):
-#         self.input1 = input1
-#         self.vocab = vocab
-#         self.seq_len = seq_len
-#         self.transform = transform
-#
-#     def get_item(self):
-#         sm = self.transform(self.input1)  # List
-#         content = [self.vocab.stoi.get(token, self.vocab.unk_index) for token in sm]
-#         X = [self.vocab.sos_index] + content + [self.vocab.eos_index]
-#         padding = [self.vocab.pad_index] * (self.seq_len - len(X))
-#         X.extend(padding)
-#
-#         return torch.FloatTensor(X)
