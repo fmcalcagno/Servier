@@ -10,7 +10,7 @@ from sklearn.preprocessing import OneHotEncoder
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Hyperparams')
-    parser.add_argument('--action', type=str, default="Train", help='Action to execute [Train/Evaluate/Predict]')
+    parser.add_argument('--action', type=str, default="Predict", help='Action to execute [Train/Evaluate/Predict]')
     parser.add_argument('--modelnumber', type=str, default=3, help='Chose model tu use')
     parser.add_argument('--n_epoch', '-e', type=int, default=30, help='number of epochs')
     parser.add_argument('--train_data', type=str, default='data/dataset_multi_train.csv', help='train corpus (.csv)')
@@ -38,8 +38,6 @@ def predict(args):
     sigmoid_v = np.vectorize(sigmoid)
     print("Insert Smiles to predict")
     smiles_input = str(input())
-    print("Predicting ", smiles_input)
-    print("Smiles Validity",validity(smiles_input))
 
     sl = SmilesDataset_singleline(model_number=args.modelnumber, input1=smiles_input)
     outputsize = 2 if args.modelnumber < 3 else 18
