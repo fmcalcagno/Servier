@@ -1,6 +1,4 @@
 from rdkit.Chem import rdMolDescriptors, MolFromSmiles, rdmolfiles, rdmolops
-import numpy
-from rdkit import Chem, DataStructs
 
 def fingerprint_features(smile_string, radius=2, size=2048):
     mol = MolFromSmiles(smile_string)
