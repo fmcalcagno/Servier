@@ -5,18 +5,20 @@ from datasets import *
 import torch.optim as optim
 from sklearn.metrics import confusion_matrix,classification_report,multilabel_confusion_matrix
 from sklearn.preprocessing import OneHotEncoder
-
-
+import torch
+import pandas as pd
+import numpy as np
+from utilsfun import *
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Hyperparams')
-    parser.add_argument('--action', type=str, default="Predict", help='Action to execute [Train/Evaluate/Predict]')
-    parser.add_argument('--modelnumber', type=str, default=3, help='Chose model tu use')
+    parser.add_argument('--action', type=str, default="Evaluate", help='Action to execute [Train/Evaluate/Predict]')
+    parser.add_argument('--modelnumber', type=int, default=3, help='Chose model tu use')
     parser.add_argument('--n_epoch', '-e', type=int, default=30, help='number of epochs')
     parser.add_argument('--train_data', type=str, default='data/dataset_multi_train.csv', help='train corpus (.csv)')
     parser.add_argument('--val_data', type=str, default='data/dataset_multi_test.csv', help='validation corpus (.csv)')
     parser.add_argument('--out_dir_models', '-o', type=str, default='models', help='output directory')
-    parser.add_argument('--out_file_results', '-of', type=str, default='results/output1.csv', help='output file for Evaluation')
+    parser.add_argument('--out_file_results', '-of', type=str, default='results/output3.csv', help='output file for Evaluation')
     parser.add_argument('--batch_size', '-b', type=int, default=6, help='batch size')
     parser.add_argument('--lr', type=float, default=0.00005, help='Learning rate')
     parser.add_argument('--modelpath', type=str, default="models/model3_final.save", help='Model to load')
@@ -24,7 +26,7 @@ def parse_arguments():
 
     return parser.parse_args()
 
-def predict(args):
+def predict():
     """
     Function to predict the model selected in the parameteres (could be model 1, 2 or 3) with a string inserted as an
     input.
@@ -32,10 +34,11 @@ def predict(args):
     :param args:
     :return:
     """
+    args = parse_arguments()
     if args.modelnumber < 1 or args.modelnumber > 3:
         print("Error: Number of the chosen model must be between 1 and 3")
         return
-    sigmoid_v = np.vectorize(sigmoid)
+
     print("Insert Smiles to predict")
     smiles_input = str(input())
 
@@ -68,18 +71,17 @@ def predict(args):
         print(y_pred_classes)
 
 
-def evaluate(args):
+def evaluate():
     """
     I Normally evaluate the model after each training epoch but the pdf demanded an independent evaluate function
     :param args:
     :return:
     """
+    args = parse_arguments()
     if args.modelnumber < 1 or args.modelnumber > 3:
         print("Error: Number of the chosen model must be between 1 and 3")
         return
     print("Evaluating model ", args.modelnumber)
-    sigmoid_v = np.vectorize(sigmoid)
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     hotencoder = OneHotEncoder()
     outputsize = (1 if args.modelnumber < 3 else 9)*2
@@ -114,23 +116,26 @@ def evaluate(args):
     y_pred_classes = hotencoder.inverse_transform(outputs)
     model_output["target"] = [j for i in y_pred_classes for j in i]
     model_output["predictions"] = [j for i in y_test_classes for j in i]
-    print("Confusion Matrix")
+
     if args.modelnumber < 3 :
+        print("Confusion Matrix P1")
         print(confusion_matrix(y_test_classes, y_pred_classes))
     if args.modelnumber == 3:
+        print("Confusion Matrix by PX")
         print(multilabel_confusion_matrix(y_test_classes, y_pred_classes))
     print("Classification report")
     print(classification_report(y_test_classes, y_pred_classes))
+    if args.modelnumber < 3:
+        model_output.to_csv(args.out_file_results, index=False)
+        print("Results exported to ", args.out_file_results)
 
-    model_output.to_csv(args.out_file_results, index=False)
-    print("Results exported to ", args.out_file_results)
-
-def train(args):
+def train():
     """
     Method to train the chosen Model (chosen in the arguments)
     :param args:
     :return:
     """
+    args = parse_arguments()
     print("Training model ",args.modelnumber," with learning rate ",args.lr)
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -245,11 +250,11 @@ def main():
 
     assert torch.cuda.is_available()
     if args.action == "Train":
-        train(args)
+        train()
     elif args.action == "Evaluate":
-        evaluate(args)
+        evaluate()
     elif args.action == "Predict":
-        predict(args)
+        predict()
 
 
 if __name__ == "__main__":

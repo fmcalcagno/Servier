@@ -1,9 +1,11 @@
 from torch.utils.data import Dataset, DataLoader
-from utils import *
+from utilsfun import *
 from read_smiles import *
 import networkx as nx
 import feature_extractor as fe
-
+import pandas as pd
+import numpy as np
+import torch
 
 class SmilesDataset(Dataset):
     """Smiles Dataset Generated for all three models"""
