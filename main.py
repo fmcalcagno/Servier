@@ -11,16 +11,16 @@ from sklearn.preprocessing import OneHotEncoder
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Hyperparams')
     parser.add_argument('--action', type=str, default="Train", help='Action to execute [Train/Evaluate/Predict]')
-    parser.add_argument('--modelnumber', type=str, default=1, help='Chose model tu use')
+    parser.add_argument('--modelnumber', type=str, default=3, help='Chose model tu use')
     parser.add_argument('--n_epoch', '-e', type=int, default=30, help='number of epochs')
-    parser.add_argument('--train_data', type=str, default='data/dataset_single_train.csv', help='train corpus (.csv)')
-    parser.add_argument('--val_data', type=str, default='data/dataset_single_test.csv', help='validation corpus (.csv)')
+    parser.add_argument('--train_data', type=str, default='data/dataset_multi_train.csv', help='train corpus (.csv)')
+    parser.add_argument('--val_data', type=str, default='data/dataset_multi_test.csv', help='validation corpus (.csv)')
     parser.add_argument('--out_dir_models', '-o', type=str, default='models', help='output directory')
     parser.add_argument('--out_file_results', '-of', type=str, default='results/output1.csv', help='output file for Evaluation')
     parser.add_argument('--batch_size', '-b', type=int, default=6, help='batch size')
     parser.add_argument('--lr', type=float, default=0.00005, help='Learning rate')
-    parser.add_argument('--modelpath', type=str, default="models/model1_final.save", help='Model to load')
-    parser.add_argument('--out_model_name', type=str, default='model1_final.save', help='output directory')
+    parser.add_argument('--modelpath', type=str, default="models/model3_final.save", help='Model to load')
+    parser.add_argument('--out_model_name', type=str, default='model3_final.save', help='output directory')
 
     return parser.parse_args()
 
@@ -85,10 +85,11 @@ def evaluate(args):
 
     hotencoder = OneHotEncoder()
     outputsize = (1 if args.modelnumber < 3 else 9)*2
-    model = LSTMModel(input_size=2048, embed_size=30, hidden_size=50, output_size=outputsize)
+    model = LSTMModel(input_size=2048, embed_size=50, hidden_size=40, output_size=outputsize)
     eval_dataset = SmilesDataset(model_number=args.modelnumber, hotencoder=hotencoder, file=args.val_data, input_type="Long")
 
     # Load model from file
+
     #train_set, evaluate_data = torch.utils.data.random_split(full_dataset, [4499, 500], generator=torch.Generator().manual_seed(25))
     eval_loader = DataLoader(eval_dataset, batch_size=args.batch_size, shuffle=False)
     model.load_state_dict(torch.load(args.modelpath),strict=False)
@@ -148,6 +149,7 @@ def train(args):
                                  input_type="Long")
     val_dataset = SmilesDataset(model_number=args.modelnumber, hotencoder=hotencoder, file=args.val_data,
                                   input_type="Long")
+
     # As we are working with an unbalaced dataset, use the loss function to prioritize the importance of a class
     criterionvector = torch.FloatTensor([0.4, 0.6]).cuda() if args.modelnumber < 3 else None
     #BCEWithLogitsLoss is more numerically stable than using a plain Sigmoid followed by a BCELoss
