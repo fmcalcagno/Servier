@@ -10,42 +10,46 @@ from sklearn.preprocessing import OneHotEncoder
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Hyperparams')
-    parser.add_argument('--action', type=str, default="Predict", help='Action to execute [Train/Evaluate/Predict]')
-    parser.add_argument('--modelnumber', type=str, default=3, help='Chose model tu use')
-    parser.add_argument('--n_epoch', '-e', type=int, default=50, help='number of epochs')
-    parser.add_argument('--data', type=str, default='data/dataset_multi.csv', help='train corpus (.csv)')
+    parser.add_argument('--action', type=str, default="Train", help='Action to execute [Train/Evaluate/Predict]')
+    parser.add_argument('--modelnumber', type=str, default=1, help='Chose model tu use')
+    parser.add_argument('--n_epoch', '-e', type=int, default=40, help='number of epochs')
+    parser.add_argument('--train_data', type=str, default='data/dataset_single_train.csv', help='train corpus (.csv)')
+    parser.add_argument('--val_data', type=str, default='data/dataset_single_test.csv', help='validation corpus (.csv)')
     parser.add_argument('--out_dir_models', '-o', type=str, default='models', help='output directory')
     parser.add_argument('--out_file_results', '-of', type=str, default='results/output1.csv', help='output file for Evaluation')
-    parser.add_argument('--batch_size', '-b', type=int, default=10, help='batch size')
-    parser.add_argument('--lr', type=float, default=0.005, help='Learning rate')
-    parser.add_argument('--modelpath', type=str, default="models/model3.save", help='Model to load')
-    parser.add_argument('--out_model_name', type=str, default='model3.save', help='output directory')
+    parser.add_argument('--batch_size', '-b', type=int, default=6, help='batch size')
+    parser.add_argument('--lr', type=float, default=0.0001, help='Learning rate')
+    parser.add_argument('--modelpath', type=str, default="models/model1_final.save", help='Model to load')
+    parser.add_argument('--out_model_name', type=str, default='model1_final.save', help='output directory')
 
     return parser.parse_args()
 
 def predict(args):
+    """
+    Function to predict the model selected in the parameteres (could be model 1, 2 or 3) with a string inserted as an
+    input.
+    The Output changes depending of the chosen model (model 3 has 9 outputs).
+    :param args:
+    :return:
+    """
+    if args.modelnumber < 1 or args.modelnumber > 3:
+        print("Error: Number of the chosen model must be between 1 and 3")
+        return
     sigmoid_v = np.vectorize(sigmoid)
     print("Insert Smiles to predict")
     smiles_input = str(input())
     print("Predicting ", smiles_input)
+    print("Smiles Validity",validity(smiles_input))
 
-    if args.modelnumber == 1:
-        model = LinearClassificationX(input_dim=2048, hidden_dim=256, tagset_size=1, dropout=0.7)
-        features = fe.fingerprint_features(smiles_input)
-        nn_input = torch.FloatTensor(np.asarray(features))
-    elif args.modelnumber == 2:
-        model = LSTMModel(input_size=2048, embed_size=50, hidden_size=150, output_size=2)
-        sl = SmilesDataset_singleline(smiles_input)
-        nn_input = sl.get_item()
-        hotencoder = OneHotEncoder()
+    sl = SmilesDataset_singleline(model_number=args.modelnumber, input1=smiles_input)
+    outputsize = 2 if args.modelnumber < 3 else 18
+    model = LSTMModel(input_size=2048, embed_size=50, hidden_size=40, output_size=outputsize)
+    hotencoder = OneHotEncoder()
+    nn_input = sl.get_item()
 
+    if args.modelnumber < 3:
         he = hotencoder.fit_transform([[0], [1]]).toarray()
-
     elif args.modelnumber == 3:
-        model = LSTMModel(input_size=2048, embed_size=50, hidden_size=150, output_size=18)
-        sl = SmilesDataset_singleline(smiles_input)
-        nn_input = sl.get_item()
-        hotencoder = OneHotEncoder()
         he = hotencoder.fit_transform([[0,0,0,0,0,0,0,0,0],[1,1,1,1,1,1,1,1,1]]).toarray()
 
     if (torch.cuda.is_available()):
@@ -59,50 +63,34 @@ def predict(args):
     with torch.no_grad():
         model.eval()
         X_batch = nn_input.cuda()
-        if args.modelnumber >= 2:
-            y_val, _ = model(X_batch.unsqueeze(0))
-            y_val2 = y_val.cpu().detach().numpy()
-            y_pred_classes = hotencoder.inverse_transform(y_val2)
-        else:
-            y_val = model(X_batch.unsqueeze(0))
+        y_val, _ = model(X_batch.unsqueeze(0))
+        y_val2 = y_val.cpu().detach().numpy()
+
+        y_pred_classes = hotencoder.inverse_transform(y_val2)
         print(y_pred_classes)
 
 
 def evaluate(args):
+    """
+    I Normally evaluate the model after each training epoch but the pdf demanded an independent evaluate function
+    :param args:
+    :return:
+    """
+    if args.modelnumber < 1 or args.modelnumber > 3:
+        print("Error: Number of the chosen model must be between 1 and 3")
+        return
     print("Evaluating model ", args.modelnumber)
     sigmoid_v = np.vectorize(sigmoid)
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    if args.modelnumber < 1 or args.modelnumber > 3: return
-    if args.modelnumber == 1:
-        data = importfiles(args.data)
-        X, Y = [], []
-        for index, row in data.iterrows():
-            P1, mol_id, smiles = row
-            features = fe.fingerprint_features(smiles)
-            numpy_features = np.asarray(features)
-            X.append(numpy_features)
-            Y.append(P1)
 
-        full_dataset = molDataset(torch.FloatTensor(X),
-                                   torch.FloatTensor(Y))
-        model = LinearClassificationX(input_dim=2048,hidden_dim=256,tagset_size=1,dropout=0.7)
-
-    elif args.modelnumber == 2:
-
-        hotencoder= OneHotEncoder()
-        full_dataset = SmilesDatasetP1(hotencoder,args.data,input_type="Long")
-        model = LSTMModel(input_size=2048, embed_size=50, hidden_size=150, output_size=2)
-
-    elif args.modelnumber == 3:
-
-        model = LSTMModel(input_size=2048, embed_size=50, hidden_size=150, output_size=18)
-        hotencoder = OneHotEncoder()
-        full_dataset = SmilesDatasetP1_P9(hotencoder, args.data, input_type="Long")
-
+    hotencoder = OneHotEncoder()
+    outputsize = (1 if args.modelnumber < 3 else 9)*2
+    model = LSTMModel(input_size=2048, embed_size=30, hidden_size=50, output_size=outputsize)
+    eval_dataset = SmilesDataset(model_number=args.modelnumber, hotencoder=hotencoder, file=args.val_data, input_type="Long")
 
     # Load model from file
-    train_set, evaluate_data = torch.utils.data.random_split(full_dataset, [4499, 500], generator=torch.Generator().manual_seed(42))
-    eval_loader = DataLoader(evaluate_data, batch_size=args.batch_size, shuffle=False)
+    #train_set, evaluate_data = torch.utils.data.random_split(full_dataset, [4499, 500], generator=torch.Generator().manual_seed(25))
+    eval_loader = DataLoader(eval_dataset, batch_size=args.batch_size, shuffle=False)
     model.load_state_dict(torch.load(args.modelpath),strict=False)
     model.eval()
     outputs = []
@@ -113,14 +101,9 @@ def evaluate(args):
         X_batch = X_batch.cuda()
         y_batch = y_batch.cuda()
         model.eval()
-        # Test mode and zero gradients
-        if args.modelnumber ==1:
-            y_pred = model(X_batch)
-        elif args.modelnumber >= 2:
-            y_pred,_ = model(X_batch)
+        y_pred, _ = model(X_batch)
         outputs.append(y_pred.cpu().detach().numpy())
         targets.append(y_batch.cpu().detach().numpy())
-
 
     # Save targets in an output file
     outputs = np.concatenate(outputs)
@@ -128,131 +111,55 @@ def evaluate(args):
 
     model_output = pd.DataFrame()
 
-
-    if args.modelnumber == 1 :
-        model_output["target"] = targets
-        #model_output["predictions"] = outputs
-        sigmoid_v = np.vectorize(sigmoid)
-        outputs[outputs < -300] = -300
-        outputs[outputs > 300] = 300
-        out= sigmoid_v(outputs).round()
-        model_output["predictions"] = out
-        print("Confusion Matrix")
-        print(confusion_matrix(targets, out))
-        print("Classification report")
-        print(classification_report(targets, out))
-
-    if args.modelnumber == 2:
-
-        y_test_classes = hotencoder.inverse_transform(targets)
-        y_pred_classes = hotencoder.inverse_transform(outputs)
-        model_output["target"] = [j for i in y_pred_classes for j in i]
-        model_output["predictions"] = [j for i in y_test_classes for j in i]
-        print("Confusion Matrix")
+    y_test_classes = hotencoder.inverse_transform(targets)
+    y_pred_classes = hotencoder.inverse_transform(outputs)
+    model_output["target"] = [j for i in y_pred_classes for j in i]
+    model_output["predictions"] = [j for i in y_test_classes for j in i]
+    print("Confusion Matrix")
+    if args.modelnumber < 3 :
         print(confusion_matrix(y_test_classes, y_pred_classes))
-        print("Classification report")
-        print(classification_report(y_test_classes, y_pred_classes))
-
     if args.modelnumber == 3:
-        y_test_classes = hotencoder.inverse_transform(targets)
-        y_pred_classes = hotencoder.inverse_transform(outputs)
-        model_output["target"] = [j for i in y_pred_classes for j in i]
-        model_output["predictions"] = [j for i in y_test_classes for j in i]
-        print("Confusion Matrix")
         print(multilabel_confusion_matrix(y_test_classes, y_pred_classes))
-        print("Classification report")
-        print(classification_report(y_test_classes, y_pred_classes))
-
+    print("Classification report")
+    print(classification_report(y_test_classes, y_pred_classes))
 
     model_output.to_csv(args.out_file_results, index=False)
     print("Results exported to ", args.out_file_results)
 
 def train(args):
+    """
+    Method to train the chosen Model (chosen in the arguments)
+    :param args:
+    :return:
+    """
     print("Training model ",args.modelnumber)
     sigmoid_v = np.vectorize(sigmoid)
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    if args.modelnumber<1 or args.modelnumber> 3: return
-    if args.modelnumber == 1:
-        data = importfiles(args.data)
-
-        #Preprocessing Smiles into Features
-        X,Y = [],[]
-        for index, row in data.iterrows():
-            P1, mol_id, smiles = row
-            features = fe.fingerprint_features(smiles)
-            X.append(np.asarray(features))
-            Y.append(P1)
-
-
-        full_dataset = molDataset(torch.FloatTensor(X),
-                                  torch.FloatTensor(Y))
-
-
-        print("Training in ", device)
-        model = LinearClassificationX(input_dim=2048,hidden_dim=256,tagset_size=1,dropout=0.7)
-        criterion = nn.BCEWithLogitsLoss(pos_weight = torch.FloatTensor([0.6]).cuda())
-        optimizer = optim.Adam(model.parameters(), lr=args.lr)
-
-        train_set, evaluate_data = torch.utils.data.random_split(full_dataset, [4499, 500],
-                                                                 generator=torch.Generator().manual_seed(42))
-        train_loader = DataLoader(dataset=train_set, batch_size=args.batch_size, shuffle=True)
-        if (torch.cuda.is_available()):
-            model.cuda()
-        for e in range(1, args.n_epoch + 1):
-            epoch_loss = 0
-            epoch_acc = 0
-            for i, (X, Y) in enumerate(train_loader):
-                X_batch = X.cuda()
-                y_batch = Y.cuda()
-                # Training mode and zero gradients
-                optimizer.zero_grad()
-                y_pred = model(X_batch)
-                loss = criterion(y_pred, y_batch.unsqueeze(1))
-                acc = binary_acc(y_pred, y_batch.unsqueeze(1))
-
-                loss.backward()
-                optimizer.step()
-
-                epoch_loss += loss.item()
-                epoch_acc += acc.item()
-            if args.modelnumber == 3:
-                print(
-                    f'Epoch {e + 0:03}: | Loss: {epoch_loss / len(train_loader):.5f}')
-            else:
-                print(
-                    f'Epoch {e + 0:03}: | Loss: {epoch_loss / len(train_loader):.5f} | Acc: {epoch_acc / len(train_loader):.3f}')
-
-        torch.save(model.state_dict(), "{}/{}".format(args.out_dir_models, args.out_model_name))
-
-        print("Model Saved in: ", "{}/{}".format(args.out_dir_models, args.out_model_name))
+    if args.modelnumber<1 or args.modelnumber> 3:
+        print("Error: Number of the chosen model must be between 1 and 3")
         return
-    elif args.modelnumber == 2:
+    hotencoder = OneHotEncoder()
+
+    outputsize = (1 if args.modelnumber < 3 else 9) * 2
+    # Rule of thumb is to have the number of hidden units  (hidden_size) be in-between the number of input units
+    # (embed_size)(50) and output classes (2/18);
+    model = LSTMModel(input_size=2048, embed_size=30, hidden_size=50, output_size=outputsize)
+    trian_dataset = SmilesDataset(model_number=args.modelnumber, hotencoder=hotencoder, file=args.train_data,
+                                 input_type="Long")
+    val_dataset = SmilesDataset(model_number=args.modelnumber, hotencoder=hotencoder, file=args.val_data,
+                                  input_type="Long")
+    # As we are working with an unbalaced dataset, use the loss function to prioritize the importance of a class
+    #criterionvector = torch.FloatTensor([0.80, 0.2]).cuda() if args.modelnumber < 3 else None
+    #BCEWithLogitsLoss is more numerically stable than using a plain Sigmoid followed by a BCELoss
+    criterion = nn.BCEWithLogitsLoss(pos_weight=None)
+
+    optimizer = optim.Adam(model.parameters(), lr=args.lr)
+    #train_set, evaluate_data = torch.utils.data.random_split(full_dataset, [7172, 500],
+    #                                                         generator=torch.Generator().manual_seed(25))
 
 
-        model = LSTMModel(input_size=2048, embed_size=50, hidden_size=150, output_size=2)
-        criterion = nn.BCEWithLogitsLoss(pos_weight = torch.FloatTensor([0.4, 0.6]).cuda())
-        optimizer = optim.Adam(model.parameters(), lr=args.lr)
-        hotencoder = OneHotEncoder()
-        full_dataset = SmilesDatasetP1(hotencoder,args.data,input_type="Long")
-        targets = full_dataset.targets
-
-    elif args.modelnumber == 3:
-        #Loading Model , loss and optimizer
-
-        model = LSTMModel(input_size=2048, embed_size=50, hidden_size=150, output_size=18)
-
-        criterion = nn.BCEWithLogitsLoss()
-        optimizer = optim.Adam(model.parameters(), lr=args.lr)
-        hotencoder = OneHotEncoder()
-        full_dataset = SmilesDatasetP1_P9(hotencoder,args.data,input_type="Long")
-
-
-
-
-    train_set, evaluate_data = torch.utils.data.random_split(full_dataset, [4499, 500],
-                                                             generator=torch.Generator().manual_seed(42))
-
-    train_loader = DataLoader(dataset=train_set, batch_size=args.batch_size, shuffle=False)
+    train_loader = DataLoader(dataset=trian_dataset, batch_size=args.batch_size, shuffle=True)
+    eval_loader = DataLoader(dataset=val_dataset, batch_size=args.batch_size, shuffle=False)
     if (torch.cuda.is_available()):
         model.cuda()
     for e in range(1, args.n_epoch + 1):
@@ -287,6 +194,48 @@ def train(args):
         else:
             print(
             f'Epoch {e + 0:03}: | Loss: {epoch_loss / len(train_loader):.5f} | Acc: {epoch_acc / (len(train_loader) ) :.3f}')
+
+        #Check overfitting
+        if e % 10 == 0:
+            with torch.no_grad():
+                model.eval()
+                outputs = []
+                targets = []
+                for X_batch, y_batch in train_loader:
+                    X_batch = X_batch.cuda()
+                    y_batch = y_batch.cuda()
+                    y_pred, _ = model(X_batch)
+                    outputs.append(y_pred.cpu().detach().numpy())
+                    targets.append(y_batch.cpu().detach().numpy())
+
+                # Save targets in an output file
+                outputs = np.concatenate(outputs)
+                targets = np.concatenate(targets)
+
+                model_output = pd.DataFrame()
+
+                y_train_classes = hotencoder.inverse_transform(targets)
+                y_pred_classes = hotencoder.inverse_transform(outputs)
+                print("Epoch {} Train measures:".format(e))
+                print(classification_report(y_train_classes, y_pred_classes))
+
+                outputs = []
+                targets = []
+                for X_batch, y_batch in eval_loader:
+                    X_batch = X_batch.cuda()
+                    y_batch = y_batch.cuda()
+                    y_pred, _ = model(X_batch)
+                    outputs.append(y_pred.cpu().detach().numpy())
+                    targets.append(y_batch.cpu().detach().numpy())
+
+                outputs = np.concatenate(outputs)
+                targets = np.concatenate(targets)
+                y_test_classes = hotencoder.inverse_transform(targets)
+                y_pred_classes = hotencoder.inverse_transform(outputs)
+                print("Epoch {} Eval measures:".format(e))
+                print(classification_report(y_test_classes, y_pred_classes))
+
+
 
     torch.save(model.state_dict(), "{}/{}".format(args.out_dir_models, args.out_model_name))
 
