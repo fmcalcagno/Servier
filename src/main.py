@@ -2,33 +2,41 @@ import argparse
 from src.models import *
 from src.datasets import *
 import torch.optim as optim
-from sklearn.metrics import confusion_matrix,classification_report,multilabel_confusion_matrix
+from sklearn.metrics import confusion_matrix, classification_report, multilabel_confusion_matrix
 from sklearn.preprocessing import OneHotEncoder
 from src.utilsfun import *
-from torch.utils.data import  DataLoader
+from torch.utils.data import DataLoader
+
 
 def parse_arguments():
+    """
+    Function that parsers parameters
+    The parameters actions is placed there in the case the file main.py is executed independently
+    :return:
+    parser parameters
+    """
     parser = argparse.ArgumentParser(description='Hyperparams')
     parser.add_argument('--action', type=str, default="Evaluate", help='Action to execute [Train/Evaluate/Predict]')
-    parser.add_argument('--modelnumber', type=int, default=2, help='Chose model tu use')
+    parser.add_argument('--modelnumber', type=int, default=3, help='Chose model tu use')
     parser.add_argument('--n_epoch', '-e', type=int, default=1, help='number of epochs')
     parser.add_argument('--train_data', type=str, default='data/dataset_multi_train.csv', help='train corpus (.csv)')
     parser.add_argument('--val_data', type=str, default='data/dataset_multi_test.csv', help='validation corpus (.csv)')
     parser.add_argument('--out_dir_models', '-o', type=str, default='models', help='output directory')
-    parser.add_argument('--out_file_results', '-of', type=str, default='results/output3.csv', help='output file for Evaluation')
+    parser.add_argument('--out_file_results', '-of', type=str, default='results/output1.csv', help='output file for Evaluation')
     parser.add_argument('--batch_size', '-b', type=int, default=6, help='batch size')
     parser.add_argument('--lr', type=float, default=0.00005, help='Learning rate')
-    parser.add_argument('--modelpath', type=str, default="models/model2_final.save", help='Model to load')
-    parser.add_argument('--out_model_name', type=str, default='model2_final.save', help='output directory')
+    parser.add_argument('--modelpath', type=str, default="models/model3_final.save", help='Model to load')
+    parser.add_argument('--out_model_name', type=str, default='model3_final.save', help='output directory')
 
     return parser.parse_args()
+
 
 def predict():
     """
     Function to predict the model selected in the parameteres (could be model 1, 2 or 3) with a string inserted as an
     input.
     The Output changes depending of the chosen model (model 3 has 9 outputs).
-    :param args:
+    :param
     :return:
     """
     args = parse_arguments()
@@ -70,7 +78,7 @@ def predict():
 def evaluate():
     """
     I Normally evaluate the model after each training epoch but the pdf demanded an independent evaluate function
-    :param args:
+    :param
     :return:
     """
     args = parse_arguments()
@@ -126,10 +134,11 @@ def evaluate():
         model_output.to_csv(args.out_file_results, index=False)
         print("Results exported to ", args.out_file_results)
 
+
 def train():
     """
     Method to train the chosen Model (chosen in the arguments)
-    :param args:
+    :param
     :return:
     """
     args = parse_arguments()
@@ -243,6 +252,8 @@ def train():
     torch.save(model.state_dict(), "{}/{}".format(args.out_dir_models, args.out_model_name))
 
     print("Model Saved in: ", "{}/{}".format(args.out_dir_models, args.out_model_name))
+
+
 def main():
     args = parse_arguments()
 
