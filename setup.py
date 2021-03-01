@@ -1,26 +1,23 @@
-from setuptools import setup
-from setuptools import find_packages
-import setuptools
-from setuptools.command.develop import develop
-from main import train
-import setuptools.command.build_py
+from setuptools import setup, find_packages
 
 
-
-setup(name="servier",
-      version="0.0.1",
-      description="Exam test for Servier",
-      author="Facundo Calcagno",
-      author_email="fmcalcagno@gmail.com",
-      packages=find_packages() ,
-      install_requires=["requests"],
-
-      license="Apache 2.0",
-      entry_points={
-            'console_scripts': [
-                  'train = main:train',
-                  'evaluate = main:evaluate',
-                  'predict = main:predict',
-            ],
-      }
-      )
+setup(
+    name='servier',
+    author='facundo',
+    author_email='fmcalcagno@gmail.com',
+    packages= find_packages(include=['src','src.*']),
+    install_requires=[
+            'torch',
+            'pandas',
+            'numpy>=1.14.5',
+            'xnetwork',
+            'flask',
+            'scikit-learn'
+        ],
+    entry_points={
+        'console_scripts': [
+            'train = src.main:train',
+            'evaluate = src.main:evaluate',
+            'predict = src.main:predict']
+    },
+)

@@ -3,9 +3,9 @@ import logging
 
 import networkx as nx
 
-from smiles_helper import (add_explicit_hydrogens, remove_explicit_hydrogens,
-                            parse_atom, fill_valence, mark_aromatic_edges,
-                            mark_aromatic_atoms)
+from src.smiles_helper import (add_explicit_hydrogens, remove_explicit_hydrogens,
+                           parse_atom, fill_valence, mark_aromatic_edges,
+                           mark_aromatic_atoms)
 
 LOGGER = logging.getLogger(__name__)
 

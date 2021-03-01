@@ -1,8 +1,7 @@
-from torch.utils.data import Dataset, DataLoader
-from utilsfun import *
-from read_smiles import *
+from torch.utils.data import Dataset
+from src.read_smiles import *
 import networkx as nx
-import feature_extractor as fe
+import src.feature_extractor as fe
 import pandas as pd
 import numpy as np
 import torch

@@ -1,10 +1,9 @@
-import io
-import json
-from models import *
 from flask import Flask, jsonify, request
-from datasets import  SmilesDataset_singleline
+from src.datasets import  SmilesDataset_singleline
 from sklearn.preprocessing import OneHotEncoder
 import torch
+from models import  LSTMModel
+
 app = Flask(__name__)
 hotencoder = OneHotEncoder()
 he = hotencoder.fit_transform([[0], [1]]).toarray()

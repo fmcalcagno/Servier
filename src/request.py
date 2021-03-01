@@ -1,5 +1,5 @@
 import requests
-from utilsfun import validity
+
 def main():
     print("Insert Smiles to predict")
     smiles_input = str(input())

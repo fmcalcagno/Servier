@@ -1,28 +1,25 @@
 import argparse
-from models import *
-import feature_extractor as fe
-from datasets import *
+from src.models import *
+from src.datasets import *
 import torch.optim as optim
 from sklearn.metrics import confusion_matrix,classification_report,multilabel_confusion_matrix
 from sklearn.preprocessing import OneHotEncoder
-import torch
-import pandas as pd
-import numpy as np
-from utilsfun import *
+from src.utilsfun import *
+from torch.utils.data import  DataLoader
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Hyperparams')
-    parser.add_argument('--action', type=str, default="Evaluate", help='Action to execute [Train/Evaluate/Predict]')
-    parser.add_argument('--modelnumber', type=int, default=3, help='Chose model tu use')
-    parser.add_argument('--n_epoch', '-e', type=int, default=30, help='number of epochs')
+    parser.add_argument('--action', type=str, default="Train", help='Action to execute [Train/Evaluate/Predict]')
+    parser.add_argument('--modelnumber', type=int, default=2, help='Chose model tu use')
+    parser.add_argument('--n_epoch', '-e', type=int, default=1, help='number of epochs')
     parser.add_argument('--train_data', type=str, default='data/dataset_multi_train.csv', help='train corpus (.csv)')
     parser.add_argument('--val_data', type=str, default='data/dataset_multi_test.csv', help='validation corpus (.csv)')
     parser.add_argument('--out_dir_models', '-o', type=str, default='models', help='output directory')
     parser.add_argument('--out_file_results', '-of', type=str, default='results/output3.csv', help='output file for Evaluation')
     parser.add_argument('--batch_size', '-b', type=int, default=6, help='batch size')
     parser.add_argument('--lr', type=float, default=0.00005, help='Learning rate')
-    parser.add_argument('--modelpath', type=str, default="models/model3_final.save", help='Model to load')
-    parser.add_argument('--out_model_name', type=str, default='model3_final.save', help='output directory')
+    parser.add_argument('--modelpath', type=str, default="models/model1.save", help='Model to load')
+    parser.add_argument('--out_model_name', type=str, default='model1.save', help='output directory')
 
     return parser.parse_args()
 

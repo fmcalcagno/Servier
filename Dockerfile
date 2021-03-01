@@ -19,8 +19,16 @@ RUN pip install torch
 RUN conda install -c conda-forge rdkit
 RUN conda install -c anaconda networkx
 
-COPY . /workspace/servier/
+COPY .. /workspace/servier/
+
+RUN python /workspace/servier/setup.py build
+RUN python   /workspace/servier/setup.py install
 
 
+RUN pwd
+#ENTRYPOINT [ "python3" ]
+
+#CMD ["servier:train"]
+CMD ["worspace/servier/setup.py"]
 
 
