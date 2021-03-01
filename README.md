@@ -5,7 +5,7 @@ SERVIER DATA SCIENCE TEST
     In the following lines I'll go throw the installation, usage and execution process of the package, and I'll explain some
     of my choices during the project.
 
-## INSTALATION
+## INSTALLATION
 
 1- Install Nvidia Drivers.
 
@@ -23,12 +23,25 @@ SERVIER DATA SCIENCE TEST
       Please follow the instructions in the following website:
       [Nvidia Container Toolkit instructions](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html).
  
- 
-4- If you get the code from this repo: Build Docker container: 
+4- Clone the github Repository in the desired folder
+    git clone https://github.com/fmcalcagno/Servier
+
+5- Download the trained models and the training and validations sets from the zip I delivered
+
+6- Copy the training and validation sets into: 
+    
+    */servier/data/
+
+7- Copy the models into the model's folder:
+    
+    ./servier/models
+
+
+4-  Build Docker container from servier folder: 
     
     docker build . -t servier
 
-   If you got the Docker container, this step is not necessary.
+
 
 5- Run the desired process (Train / Predict / Evaluate) for the desired model.
 
