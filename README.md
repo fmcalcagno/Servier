@@ -2,7 +2,7 @@ SERVIER DATA SCIENCE TEST
 ==========================
 
     This is the README file of the Servier Data Science Test created by Facundo Calcagno (fmcalcagno@gmail.com).
-    In the following lines I'll go throgh the installation, usage and execution process of the package, and I'll explain some
+    In the following lines I'll go through the installation, usage and execution process of the package, and I'll explain some
     of my choices during the project.
 
 ## INSTALLATION
