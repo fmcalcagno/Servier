@@ -2,7 +2,7 @@ from flask import Flask, jsonify, request
 from src.datasets import  SmilesDataset_singleline
 from sklearn.preprocessing import OneHotEncoder
 import torch
-from models import  LSTMModel
+from src.models import LSTMModel
 
 app = Flask(__name__)
 hotencoder = OneHotEncoder()

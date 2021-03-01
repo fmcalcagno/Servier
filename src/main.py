@@ -9,7 +9,7 @@ from torch.utils.data import  DataLoader
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Hyperparams')
-    parser.add_argument('--action', type=str, default="Train", help='Action to execute [Train/Evaluate/Predict]')
+    parser.add_argument('--action', type=str, default="Evaluate", help='Action to execute [Train/Evaluate/Predict]')
     parser.add_argument('--modelnumber', type=int, default=2, help='Chose model tu use')
     parser.add_argument('--n_epoch', '-e', type=int, default=1, help='number of epochs')
     parser.add_argument('--train_data', type=str, default='data/dataset_multi_train.csv', help='train corpus (.csv)')
@@ -18,8 +18,8 @@ def parse_arguments():
     parser.add_argument('--out_file_results', '-of', type=str, default='results/output3.csv', help='output file for Evaluation')
     parser.add_argument('--batch_size', '-b', type=int, default=6, help='batch size')
     parser.add_argument('--lr', type=float, default=0.00005, help='Learning rate')
-    parser.add_argument('--modelpath', type=str, default="models/model1.save", help='Model to load')
-    parser.add_argument('--out_model_name', type=str, default='model1.save', help='output directory')
+    parser.add_argument('--modelpath', type=str, default="models/model2_final.save", help='Model to load')
+    parser.add_argument('--out_model_name', type=str, default='model2_final.save', help='output directory')
 
     return parser.parse_args()
 
@@ -55,12 +55,11 @@ def predict():
 
     model.load_state_dict(torch.load(args.modelpath))
 
-    if (torch.cuda.is_available()):
-        model.cuda()
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     with torch.no_grad():
         model.eval()
-        X_batch = nn_input.cuda()
+        X_batch = nn_input.to(device)
         y_val, _ = model(X_batch.unsqueeze(0))
         y_val2 = y_val.cpu().detach().numpy()
 
@@ -79,6 +78,7 @@ def evaluate():
         print("Error: Number of the chosen model must be between 1 and 3")
         return
     print("Evaluating model ", args.modelnumber)
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     hotencoder = OneHotEncoder()
     outputsize = (1 if args.modelnumber < 3 else 9)*2
@@ -96,8 +96,8 @@ def evaluate():
     if (torch.cuda.is_available()):
         model.cuda()
     for X_batch, y_batch in eval_loader:
-        X_batch = X_batch.cuda()
-        y_batch = y_batch.cuda()
+        X_batch = X_batch.to(device)
+        y_batch = y_batch.to(device)
         model.eval()
         y_pred, _ = model(X_batch)
         outputs.append(y_pred.cpu().detach().numpy())
@@ -150,28 +150,29 @@ def train():
     val_dataset = SmilesDataset(model_number=args.modelnumber, hotencoder=hotencoder, file=args.val_data,
                                   input_type="Long")
 
+
+
     # As we are working with an unbalaced dataset, use the loss function to prioritize the importance of a class
     criterionvector = torch.FloatTensor([0.4, 0.6]).cuda() if args.modelnumber < 3 else None
     #BCEWithLogitsLoss is more numerically stable than using a plain Sigmoid followed by a BCELoss
     criterion = nn.BCEWithLogitsLoss(pos_weight=criterionvector)
 
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
-    #train_set, evaluate_data = torch.utils.data.random_split(full_dataset, [7172, 500],
-    #                                                         generator=torch.Generator().manual_seed(25))
-
 
     train_loader = DataLoader(dataset=trian_dataset, batch_size=args.batch_size, shuffle=True)
     eval_loader = DataLoader(dataset=val_dataset, batch_size=args.batch_size, shuffle=False)
     if (torch.cuda.is_available()):
         model.cuda()
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
     for e in range(1, args.n_epoch + 1):
         epoch_loss = 0
         epoch_acc = 0
         hidden = None
         for i, (X, Y) in enumerate(train_loader):
             model.train()
-            X_batch = X.cuda()
-            y_batch = Y.cuda()
+            X_batch = X.to(device)
+            y_batch = Y.to(device)
             optimizer.zero_grad()
             y_pred,hidden =model(X_batch,hidden)
 
@@ -204,8 +205,8 @@ def train():
                 outputs = []
                 targets = []
                 for X_batch, y_batch in train_loader:
-                    X_batch = X_batch.cuda()
-                    y_batch = y_batch.cuda()
+                    X_batch = X_batch.to(device)
+                    y_batch = y_batch.to(device)
                     y_pred, _ = model(X_batch)
                     outputs.append(y_pred.cpu().detach().numpy())
                     targets.append(y_batch.cpu().detach().numpy())
@@ -224,8 +225,8 @@ def train():
                 outputs = []
                 targets = []
                 for X_batch, y_batch in eval_loader:
-                    X_batch = X_batch.cuda()
-                    y_batch = y_batch.cuda()
+                    X_batch = X_batch.to(device)
+                    y_batch = y_batch.to(device)
                     y_pred, _ = model(X_batch)
                     outputs.append(y_pred.cpu().detach().numpy())
                     targets.append(y_batch.cpu().detach().numpy())
