@@ -72,7 +72,7 @@ They are not all necessary for the 3 functions.
 
         Please replace [[datapath]] and [[modelpath]]: with the full paths on where to find the datasets and the models in your local computer
 
-        For example: docker run -it --gpus all -v /home/facundo/PycharmProjects/servier/data/:/workspace/servier/data/ -v /home/facundo/PycharmProjects/servier/data/:/workspace/servier/models/   servier:latest train --modelnumber=1 --n_epoch=10 --train_data="data/dataset_single_train.csv" --val_data="data/dataset_single_test.csv" --out_dir_models=models --batch_size=8 --lr=0.001 --out_model_name="model1_test.save"
+        For example: docker run -it --gpus all -v /home/facundo/PycharmProjects/servier/data/:/workspace/servier/data/ -v /home/facundo/PycharmProjects/servier/models/:/workspace/servier/models/   servier:latest train --modelnumber=1 --n_epoch=10 --train_data="data/dataset_single_train.csv" --val_data="data/dataset_single_test.csv" --out_dir_models=models --batch_size=8 --lr=0.001 --out_model_name="model1_test.save"
     
     
     - Train Model 2

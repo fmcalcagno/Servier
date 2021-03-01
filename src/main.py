@@ -17,10 +17,10 @@ def parse_arguments():
     """
     parser = argparse.ArgumentParser(description='Hyperparams')
     parser.add_argument('--action', type=str, default="Evaluate", help='Action to execute [Train/Evaluate/Predict]')
-    parser.add_argument('--modelnumber', type=int, default=3, help='Chose model tu use')
+    parser.add_argument('--modelnumber', type=int, default=2, help='Chose model tu use')
     parser.add_argument('--n_epoch', '-e', type=int, default=1, help='number of epochs')
-    parser.add_argument('--train_data', type=str, default='data/dataset_multi_train.csv', help='train corpus (.csv)')
-    parser.add_argument('--val_data', type=str, default='data/dataset_multi_test.csv', help='validation corpus (.csv)')
+    parser.add_argument('--train_data', type=str, default='data/dataset_single_train.csv', help='train corpus (.csv)')
+    parser.add_argument('--val_data', type=str, default='data/dataset_single_test.csv', help='validation corpus (.csv)')
     parser.add_argument('--out_dir_models', '-o', type=str, default='models', help='output directory')
     parser.add_argument('--out_file_results', '-of', type=str, default='results/output1.csv', help='output file for Evaluation')
     parser.add_argument('--batch_size', '-b', type=int, default=6, help='batch size')
@@ -246,6 +246,8 @@ def train():
                 y_pred_classes = hotencoder.inverse_transform(outputs)
                 print("Epoch {} Eval measures:".format(e))
                 print(classification_report(y_test_classes, y_pred_classes))
+                torch.save(model.state_dict(), "{}/model_{}_checkpoint_{}.save".format(args.out_dir_models,args.modelnumber , e))
+                print("Model Checkpoint Saved in: ", "{}/model_{}_checkpoint_{}.save".format(args.out_dir_models,args.modelnumber , e))
 
 
 
