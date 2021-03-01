@@ -7,6 +7,7 @@ of my choices during the project.
 Install Nvidia Drivers
 Install Docker
 Install Nvidia container toolkit
+try
 
 ## USAGE 
 
