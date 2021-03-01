@@ -25,7 +25,8 @@ WORKDIR /workspace/servier/
 
 RUN python setup.py build
 RUN python setup.py install
-
+RUN pip install flask
+EXPOSE 7000
 
 
 

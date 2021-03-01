@@ -5,7 +5,7 @@ def main():
     smiles_input = str(input())
     print("Predicting ", smiles_input)
 
-    resp = requests.post("http://localhost:5000/predict",
+    resp = requests.post("http://0.0.0.0:7000/predict",
                          files={"smiles": smiles_input})
     try:
         print(resp.json())

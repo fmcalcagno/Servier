@@ -106,20 +106,20 @@ They are not all necessary for the 3 functions.
 
     - Evaluate Model 3
 
-        docker run -it --gpus all -v [[datapath]]:/workspace/servier/data/ -v [[modelpath]]:/workspace/servier/models/   servier:latest evaluate --modelnumber=2  --modelpath=models/model3_final.save  --val_data="data/dataset_multi_test.csv" --out_file_results="results/output3.csv"
+        docker run -it --gpus all -v [[datapath]]:/workspace/servier/data/ -v [[modelpath]]:/workspace/servier/models/   servier:latest evaluate --modelnumber=3  --modelpath=models/model3_final.save  --val_data="data/dataset_multi_test.csv" --out_file_results="results/output3.csv"
 
 
     - Predict Model 1
 
-        docker run -it --gpus all -v   servier:latest predict --modelnumber=1 --modelpath=models/model1_final.save  
+        docker run -it --gpus all   -v [[modelpath]]:/workspace/servier/models/   servier:latest predict --modelnumber=1 --modelpath="models/model1_final.save"  
 
     - Predict Model 2
     
-        docker run -it --gpus all -v   servier:latest predict --modelnumber=2 --modelpath=models/model2_final.save
+        docker run -it --gpus all   -v [[modelpath]]:/workspace/servier/models/  servier:latest predict --modelnumber=2 --modelpath=models/model2_final.save
 
     - Predict Model 3
 
-        docker run -it --gpus all -v   servier:latest predict --modelnumber=3 --modelpath=models/model3_final.save
+        docker run -it --gpus all   -v [[modelpath]]:/workspace/servier/models/  servier:latest predict --modelnumber=3 --modelpath=models/model3_final.save
 
 
 ## PACKING
@@ -165,6 +165,7 @@ They are not all necessary for the 3 functions.
     of the model and try to learn at the same pace both in the training set and in the validation set due. 
     
 ## DATASETS 
+
     I created two Dataset Classes. 
     SmilesDataset: Deals withthe traiing o the model and the full evaluation of the validation set.
         - For Model 1, the featurization of the Smiles string is done using the rdkit, which delivers a 2048 array
@@ -175,7 +176,22 @@ They are not all necessary for the 3 functions.
           finish the project. 
     
     SmilesDataset_singleline: It is used to generate the prediction of a single smiles line for all 3 models.
+
+## FLASK APP
     
+    Run your Docker to publish your model and be available at port 6000. It will use model1_final.save provided in the zip file. 
+    
+    
+    docker run -it --gpus all  -p 7000:7000 -v [[modelpath]]:/workspace/servier/models/   servier:latest /bin/bash -c "FLASK_ENV=development FLASK_APP=app.py flask run --host 0.0.0.0 -p 7000"
+    For ex:
+    docker run -it --gpus all  -p 7000:7000 -v /home/facundo/PycharmProjects/servier/models/:/workspace/servier/models/   servier:latest /bin/bash -c "FLASK_ENV=development FLASK_APP=app.py flask run --host 0.0.0.0 -p 7000"
+
+
+    Open a new terminal an execute 'python request.py' (the request file in located in the src directory, the request package must  be installed).
+    in order to get a predisction for an inputed SMILES string.
+    
+    
+
 ## RESULTS
     
     In the following lines I attach the best model performances I had for each of the 3 models I trained.
