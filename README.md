@@ -1,3 +1,5 @@
+[![HitCount](http://hits.dwyl.com/fmcalcagno/servier.svg)](http://hits.dwyl.com/fmcalcagno/servier)
+
 SERVIER DATA SCIENCE TEST
 ==========================
 
