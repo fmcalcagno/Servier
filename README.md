@@ -162,7 +162,12 @@ They are not all necessary for the 3 functions.
     capabilities. 
     In any way I left the two models for future porpuses. 
     Note: In the training loop I included all the validation set accuracy measures to try to reduce the overfitting 
-    of the model and try to learn at the same pace both in the training set and in the validation set due. 
+    of the model and try to learn at the same pace both in the training set and in the validation set due.
+
+    There is a secondary filed called train_transfprmers.py where I used a pre-trained model (seyonec/PubChem10M_SMILES_BPE_396_250)
+    with a pre-trained tokenizer using the modules transformers and simpletransformers which can be both installed using pip. 
+    I include this file for further use, but neither the loss function nor the accuracy in the validation test was better 
+    than the LSTM Model I trained myself.
     
 ## DATASETS 
 
