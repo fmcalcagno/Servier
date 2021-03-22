@@ -16,11 +16,11 @@ def parse_arguments():
     parser parameters
     """
     parser = argparse.ArgumentParser(description='Hyperparams')
-    parser.add_argument('--action', type=str, default="Evaluate", help='Action to execute [Train/Evaluate/Predict]')
-    parser.add_argument('--modelnumber', type=int, default=2, help='Chose model tu use')
-    parser.add_argument('--n_epoch', '-e', type=int, default=1, help='number of epochs')
-    parser.add_argument('--train_data', type=str, default='data/dataset_single_train.csv', help='train corpus (.csv)')
-    parser.add_argument('--val_data', type=str, default='data/dataset_single_test.csv', help='validation corpus (.csv)')
+    parser.add_argument('--action', type=str, default="Train", help='Action to execute [Train/Evaluate/Predict]')
+    parser.add_argument('--modelnumber', type=int, default=4, help='Chose model tu use')
+    parser.add_argument('--n_epoch', '-e', type=int, default=20, help='number of epochs')
+    parser.add_argument('--train_data', type=str, default='data/dataset_single_train_transformer.csv', help='train corpus (.csv)')
+    parser.add_argument('--val_data', type=str, default='data/dataset_single_test_transformer.csv', help='validation corpus (.csv)')
     parser.add_argument('--out_dir_models', '-o', type=str, default='models', help='output directory')
     parser.add_argument('--out_file_results', '-of', type=str, default='results/output1.csv', help='output file for Evaluation')
     parser.add_argument('--batch_size', '-b', type=int, default=6, help='batch size')
@@ -142,6 +142,8 @@ def train():
     :return:
     """
     args = parse_arguments()
+
+
     print("Training model ",args.modelnumber," with learning rate ",args.lr)
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -254,7 +256,6 @@ def train():
     torch.save(model.state_dict(), "{}/{}".format(args.out_dir_models, args.out_model_name))
 
     print("Model Saved in: ", "{}/{}".format(args.out_dir_models, args.out_model_name))
-
 
 def main():
     args = parse_arguments()
