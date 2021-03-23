@@ -1,9 +1,9 @@
 
 
-SERVIER DATA SCIENCE TEST
+Smiles Property Detector
 ==========================
 
-    This is the README file of the Servier Data Science Test created by Facundo Calcagno (fmcalcagno@gmail.com).
+    This is the README file of a Smiles Property Detector Test created by Facundo Calcagno (fmcalcagno@gmail.com).
     In the following lines I'll go through the installation, usage and execution process of the package, and I'll explain some
     of my choices during the project.
 
